@@ -11,6 +11,7 @@ const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 const requestLogger = require('./middleware/requestLogger');
 const userRoutes = require('./routes/userRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(requestLogger);
 app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/emp', employeeRoutes);
 
 app.get('/health', function (req, res) {
   let dbStatus = 'disconnected';
