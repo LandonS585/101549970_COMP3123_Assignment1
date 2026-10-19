@@ -17,9 +17,37 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+if (process.env.VERCEL) {
+  app.set('trust proxy', 1);
+}
+
 app.use(helmet());
 app.use(express.json());
 app.use(requestLogger);
+
+let dbPromise = null;
+
+async function ensureDB(req, res, next) {
+  if (mongoose.connection.readyState === 1) {
+    return next();
+  }
+  try {
+    if (!dbPromise) {
+      dbPromise = mongoose.connect(process.env.MONGODB_URI);
+    }
+    await dbPromise;
+    next();
+  } catch (error) {
+    dbPromise = null;
+    logger.error('MongoDB connection failed: ' + error.message);
+    return res.status(500).json({ message: 'Database connection failed' });
+  }
+}
+
+if (process.env.VERCEL) {
+  app.use(ensureDB);
+}
+
 app.use('/api', apiLimiter);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/emp', employeeRoutes);
@@ -44,8 +72,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-connectDB().then(function () {
-  app.listen(PORT, function () {
-    logger.info('Server started on port ' + PORT);
+if (!process.env.VERCEL) {
+  connectDB().then(function () {
+    app.listen(PORT, function () {
+      logger.info('Server started on port ' + PORT);
+    });
   });
-});
+}
+
+module.exports = app;

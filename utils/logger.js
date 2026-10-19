@@ -1,6 +1,16 @@
 const winston = require('winston');
 const path = require('path');
 
+const transports = [new winston.transports.Console()];
+
+if (!process.env.VERCEL) {
+  transports.push(
+    new winston.transports.File({
+      filename: path.join(__dirname, '..', 'logs', 'app.log')
+    })
+  );
+}
+
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -9,12 +19,7 @@ const logger = winston.createLogger({
       return info.timestamp + ' [' + info.level.toUpperCase() + '] ' + info.message;
     })
   ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({
-      filename: path.join(__dirname, '..', 'logs', 'app.log')
-    })
-  ]
+  transports: transports
 });
 
-module.exports = logger;
+module.exports = logger;s
